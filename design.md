@@ -1,4 +1,4 @@
-# Static SVG maps
+# SVG display maps
 
 The *svgmaps* package makes it simple to create geographically-correct SVG maps
 from Python.
@@ -6,37 +6,36 @@ from Python.
 Example:
 
 ```python
-import svgmaps
-from svgmaps import Map, Stylesheet, graticule, scalebar
+import json
+from svgmaps import MapSheet, Stylesheet, Graticule, Scalebar, marshall
 
-continents = svgmaps.read_geojson("world_land.json")
+with open("world_land.json") as f:
+    continents = marshall(json.load(f))
 
-with Map("world_map.svg", projection="Mercator") as mapsheet:
+with MapSheet("world_map.svg", projection="Mercator") as mapsheet:
     mapsheet.stylesheet = Stylesheet("style.css")
     mapsheet.add(continents)
-    mapsheet.add(graticule)
-    mapsheet.add(scalebar, "lower right")
+    mapsheet.add(Graticule())
+    mapsheet.add(Scalebar("lower right"))
 ```
 
 Generates the following image:
 
-[...]
+![](example.svg)
 
 
 Maps can be bound to data to create chloropleth maps:
 
 ```python
-import svgmaps
-from svgmaps import Map, graticule, scalebar
+import json
+from svgmaps import MapSheet, marshall
 
-states = svgmaps.read_geojson("world_land.json")
+with open("states.json") as f:
+    states = marshall(json.load(f))
 
-with Map("world_map.svg", projection="USA-albers") as mapsheet:
-    mapsheet.stylesheet = Stylesheet("style.css")
+with MapSheet("world_map.svg", projection="USA-albers") as mapsheet:
     mapsheet.add(states, fill_color="pop_dens_2010", edge_color="none")
 ```
 
-
-The alpha version of *svgmaps* depends on the *Karta* geospatial package, but
-may become completely independent in the future.
+![](example_pop.svg)
 
