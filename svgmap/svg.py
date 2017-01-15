@@ -1,4 +1,3 @@
-
 import xml.etree.ElementTree as ET
 
 class SVGNode(object):
@@ -49,4 +48,6 @@ class SVGPolygon(SVGNode):
         if self.class_name is not None:
             attrs["class"] = self.class_name
         return ET.Element("polygon", attrib=attrs)
+
+
 

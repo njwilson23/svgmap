@@ -2,3 +2,6 @@
 
 from . import svg
 from . import mapsheet
+
+from .mapsheet import MapSheet
+
