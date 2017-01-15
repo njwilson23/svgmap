@@ -1,6 +1,6 @@
 # svgmap
 
-Convert vector features into SVG maps.
+Compose GeoJSON/TopoJSON vector features into SVG maps.
 
 ## Demo
 
@@ -8,8 +8,7 @@ Convert vector features into SVG maps.
 import picogeojson
 import svgmap
 
-deserializer = picogeojson.Deserializer()
-features = deserializer.fromfile("island.geojson")
+feature_collection = picogeojson.fromfile("island.geojson")
 
 with svgmap.mapsheet.MapFile("demo.svg", bbox=(36.25, 89, 41.25, 85.5)) as mapfile:
 
@@ -18,7 +17,7 @@ with svgmap.mapsheet.MapFile("demo.svg", bbox=(36.25, 89, 41.25, 85.5)) as mapfi
     polygon:hover { fill: cadetblue; transition-duration: 0.3s; }
     """
 
-    for feature in features.features:
+    for feature in feature_collection.features:
         mapfile.add(feature.geometry)
 ```
 produces
