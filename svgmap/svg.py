@@ -1,14 +1,18 @@
 
+import xml.etree.ElementTree as ET
+
 class SVGNode(object):
 
-    pass
+    def __str__(self):
+        return ET.tostring(self.svg(), encoding="unicode")
 
 class SVGPath(SVGNode):
 
-    def __init__(self, vertices, projection=None, closed=False):
+    def __init__(self, vertices, closed=False, id_name=None, class_name=None):
         self.vertices = vertices
-        self.projection = projection
         self.closed = closed
+        self.id_name = id_name
+        self.class_name = class_name
 
     def svg(self):
         ptstr = " ".join(["{0},{1}".format(x, y) for (x, y) in self.vertices])
@@ -21,15 +25,28 @@ class SVGPath(SVGNode):
         if self.closed:
             _d.append("Z")
         d = " ".join(_d)
-        return '<path d="{d}"/>'.format(d=d)
+
+        attrs = {"d": d}
+        if self.id_name is not None:
+            attrs["id"] = self.id_name
+        if self.class_name is not None:
+            attrs["class"] = self.class_name
+        return ET.Element("path", attrib=attrs)
 
 class SVGPolygon(SVGNode):
 
-    def __init__(self, vertices, projection=None):
+    def __init__(self, vertices, id_name=None, class_name=None):
         self.vertices = vertices
-        self.projection = projection
+        self.id_name = id_name
+        self.class_name = class_name
 
     def svg(self):
-        ptstr = " ".join(["{0},{1}".format(x, y) for (x, y) in self.vertices])
-        return '<polygon points="{0}"/>'.format(ptstr)
+        point_string = " ".join(["{0},{1}".format(x, y) for (x, y) in self.vertices])
+
+        attrs = {"points": point_string}
+        if self.id_name is not None:
+            attrs["id"] = self.id_name
+        if self.class_name is not None:
+            attrs["class"] = self.class_name
+        return ET.Element("polygon", attrib=attrs)
 
