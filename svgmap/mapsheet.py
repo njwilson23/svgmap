@@ -4,7 +4,15 @@ import picogeojson
 from .svg import SVGNode, SVGPolygon
 
 class MapSheet(object):
-    """ A MapSheet object represents a map image """
+    """ A MapSheet object represents a map image. It is backed by a *dest*,
+    which may be a file or an in-memory buffer. It has a *width* and a *height*
+    in user coordinates, and a *projection* defining how geographical
+    coordinates are mapped to an image.
+
+    Additional keyword arguments
+    - *style* sets a CSS stylesheet
+    - *bbox* indicates the map extents in geographical (lon, lat) coordinates
+    """
 
     def __init__(self, dest, width=None, height=None, style=None,
             projection="webmercator", bbox=None):
@@ -25,15 +33,15 @@ class MapSheet(object):
             raise NotImplementedError()
 
         if bbox is None:
-            ll = self.projection(-180, -80)
-            ur = self.projection(180, 80)
-            self.bbox = (ll[0], ll[1], ur[0], ur[1])
-        else:
-            self.bbox = bbox
+            bbox = (-180, -80, 180, 80)
+
+        ll = self.projection(bbox[0], bbox[1])
+        ur = self.projection(bbox[2], bbox[3])
+        self._bbox = (ll[0], ll[1], ur[0], ur[1])
 
         def transform(x, y):
-            ux = (x-self.bbox[0]) / (self.bbox[2]-self.bbox[0]) * self.width
-            uy = (y-self.bbox[1]) / (self.bbox[3]-self.bbox[1]) * self.height
+            ux = (x-self._bbox[0]) / (self._bbox[2]-self._bbox[0]) * self.width
+            uy = (y-self._bbox[1]) / (self._bbox[3]-self._bbox[1]) * self.height
             return ux, uy
 
         self.transform = transform

@@ -10,7 +10,7 @@ import svgmap
 
 feature_collection = picogeojson.fromfile("island.geojson")
 
-with svgmap.MapSheet("demo.svg", bbox=(36.25, 89, 41.25, 85.5)) as mapsheet:
+with svgmap.MapSheet("demo.svg", bbox=(-129, 48, -123, 51)) as mapsheet:
 
     mapsheet.style = """
     polygon { fill: lightsteelblue; transition-duration: 0.5s; }
