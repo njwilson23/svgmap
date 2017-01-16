@@ -6,7 +6,10 @@ from .svg import SVGNode, SVGPolygon
 class MapSheet(object):
     """ A MapSheet object represents a map image """
 
-    def __init__(self, width=None, height=None, style=None, projection="webmercator", bbox=None):
+    def __init__(self, dest, width=None, height=None, style=None,
+            projection="webmercator", bbox=None):
+
+        self.dest = dest
         self.projection = projection
 
         if width is None:
@@ -40,28 +43,58 @@ class MapSheet(object):
         self.entities = []
         return
 
-    def from_geojson(self, geojson, **kw):
+    def __enter__(self):
+        return self
 
-        def flip(x, y):
-            return x, self.height-y
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None and exc_value is None and traceback is None:
 
-        results = []
-        if isinstance(geojson, picogeojson.types.Polygon):
-            for ring in geojson.coordinates:
-                verts = [flip(*self.transform(*self.projection(*xy))) for xy in ring]
-                results.append(SVGPolygon(verts, **kw))
-        else:
-            raise NotImplementedError()
-        return results
+            if hasattr(self.dest, "write"):
+                self.dest.write(self.serialize())
 
+            elif isinstance(self.dest, str):
+                with open(self.dest, "w") as f:
+                    f.write(self.serialize())
+
+        return False # re-raise exceptions
 
     def add(self, *args, **kwargs):
+        """ Add one or more entities to the MapSheet. Inputs may be
+        - subclasses of SVGNode
+        - picogeojson geometries
+        """
         for arg in args:
             if isinstance(arg, SVGNode):
                 self.entities.append(arg)
             else:
                 self.entities.extend(self.from_geojson(arg, **kwargs))
         return
+
+    def from_geojson(self, geojson, circle_radius=1.0, **kw):
+
+        def flip(x, y):
+            return x, self.height-y
+
+        results = []
+
+        if isinstance(geojson, picogeojson.types.Point):
+            vert = flip(*self.transform(*self.projection(*geojson.coordinates)))
+            results.append(SVGCircle(vert, circle_radius, **kw))
+
+        elif isinstance(geojson, picogeojson.types.LineString):
+            verts = [flip(*self.transform(*self.projection(*xy)))
+                        for xy in geojson.coordinates]
+            results.append(SVGPath(verts, **kw))
+
+        elif isinstance(geojson, picogeojson.types.Polygon):
+            for ring in geojson.coordinates:
+                verts = [flip(*self.transform(*self.projection(*xy)))
+                        for xy in ring]
+                results.append(SVGPolygon(verts, **kw))
+
+        else:
+            raise NotImplementedError()
+        return results
 
     def serialize(self):
         root = ET.Element("svg", attrib={
@@ -79,23 +112,6 @@ class MapSheet(object):
             root.append(style)
 
         return ET.tostring(root, encoding="unicode")
-
-class MapFile(object):
-
-    def __init__(self, filename, **kw):
-        self.filename = filename
-        self.mapsheet = MapSheet(**kw)
-        return
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        with open(self.filename, "w") as f:
-            f.write(self.mapsheet.serialize())
-
-    def add(self, *args):
-        self.mapsheet.add(*args)
 
 def project_webmercator(lon, lat):
     x = 128 / math.pi * (lon*math.pi/180.0 + math.pi)

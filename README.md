@@ -10,15 +10,15 @@ import svgmap
 
 feature_collection = picogeojson.fromfile("island.geojson")
 
-with svgmap.mapsheet.MapFile("demo.svg", bbox=(36.25, 89, 41.25, 85.5)) as mapfile:
+with svgmap.MapSheet("demo.svg", bbox=(36.25, 89, 41.25, 85.5)) as mapsheet:
 
-    mapfile.mapsheet.style = """
+    mapsheet.style = """
     polygon { fill: lightsteelblue; transition-duration: 0.5s; }
     polygon:hover { fill: cadetblue; transition-duration: 0.3s; }
     """
 
-    for feature in feature_collection.features:
-        mapfile.add(feature.geometry)
+    for feature in features.features:
+        mapsheet.add(feature.geometry)
 ```
 produces
 
