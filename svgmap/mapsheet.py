@@ -85,6 +85,9 @@ class MapSheet(object):
 
         results = []
 
+        if isinstance(geojson, str):
+            geojson = picogeojson.fromstring(geojson)
+
         if isinstance(geojson, picogeojson.types.Point):
             vert = flip(*self.transform(*self.projection(*geojson.coordinates)))
             results.append(SVGCircle(vert, circle_radius, **kw))
@@ -99,6 +102,17 @@ class MapSheet(object):
                 verts = [flip(*self.transform(*self.projection(*xy)))
                         for xy in ring]
                 results.append(SVGPolygon(verts, **kw))
+
+        elif isinstance(geojson, picogeojson.types.GeometryCollection):
+            for g in geojson.geometries:
+                results.extend(self.from_geojson(g))
+
+        elif isinstance(geojson, picogeojson.types.Feature):
+            results.extend(self.from_geojson(geojson.geometry))
+
+        elif isinstance(geojson, picogeojson.types.FeatureCollection):
+            for g in geojson.features:
+                results.extend(self.from_geojson(g))
 
         else:
             raise NotImplementedError()

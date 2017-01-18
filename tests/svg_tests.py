@@ -21,6 +21,18 @@ class MapSheetTests(unittest.TestCase):
             '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><polygon id="empty" points="100,100 400,100 400,400 100,400" /><style>#empty { stroke: black; fill: red; }</style></svg>')
         return
 
+
+    def test_polygons_from_string(self):
+        with open("tests/vancouver_island/vancouver_island.geojson") as f:
+            s = f.read()
+
+        buf = io.StringIO()
+        with mapsheet.MapSheet(buf, bbox=(-129, 48, -123, 51)) as sheet:
+            sheet.add(s)
+
+        self.assertEqual(len(sheet.entities), 22)
+        return
+
 class SVGOutputTests(unittest.TestCase):
 
     def test_circle(self):
