@@ -1,7 +1,7 @@
 import math
 import xml.etree.ElementTree as ET
 import picogeojson
-from .svg import SVGNode, SVGPolygon
+from .svg import SVGNode, SVGCircle, SVGPolygon
 
 class MapSheet(object):
     """ A MapSheet object represents a map image. It is backed by a *dest*,
@@ -66,59 +66,110 @@ class MapSheet(object):
 
         return False # re-raise exceptions
 
-    def add(self, *args, **kwargs):
-        """ Add one or more entities to the MapSheet. Inputs may be
-        - subclasses of SVGNode
-        - picogeojson geometries
-        """
-        for arg in args:
-            if isinstance(arg, SVGNode):
-                self.entities.append(arg)
+    def add_geojson_file(self, filename, **kw):
+        """ Add contents of a GeoJSON file """
+        with open(filename) as f:
+            ret = self.add_geojson(f.read(), **kw)
+        return ret
+
+    def add_geojson(self, *strings, **kw):
+        """ Add GeoJSON strings """
+        return [self._add_picogeojson_tuple(picogeojson.fromstring(s), **kw)
+                for s in strings]
+
+    def add_svg(self, *svgnodes):
+        """ Add raw SVGNodes """
+        for node in svgnodes:
+            if isinstance(node, SVGNode):
+                self.entities.append(node)
             else:
-                self.entities.extend(self.from_geojson(arg, **kwargs))
-        return
+                raise ValueError("{} not an instance of SVGNode".format(node))
 
-    def from_geojson(self, geojson, circle_radius=1.0, **kw):
+    def _add_picogeojson_tuple(self, *inputs, **kw):
+        """ Convert picogeojson namedtuples to SVGNodes and add to self.entities
 
-        def flip(x, y):
+        Keyword arguments
+        -----------------
+        class_name : str
+        id_name : str
+        radius : float
+            applied to the <circle> radius used to represent Point, MultiPoint
+        """
+        if "radius" in kw:
+            radius = kw["radius"]
+            del kw["radius"]
+        else:
+            radius = 5.0
+
+        if "properties" in kw:
+            properties = kw["properties"]
+            del kw["properties"]
+        else:
+            properties = set()
+
+        def flip_y(x, y):
             return x, self.height-y
 
+        pending = list(inputs)
         results = []
 
-        if isinstance(geojson, str):
-            geojson = picogeojson.fromstring(geojson)
+        while len(pending) != 0:
 
-        if isinstance(geojson, picogeojson.types.Point):
-            vert = flip(*self.transform(*self.projection(*geojson.coordinates)))
-            results.append(SVGCircle(vert, circle_radius, **kw))
+            geojson = pending[0]
+            pending = pending[1:]
 
-        elif isinstance(geojson, picogeojson.types.LineString):
-            verts = [flip(*self.transform(*self.projection(*xy)))
-                        for xy in geojson.coordinates]
-            results.append(SVGPath(verts, **kw))
+            if isinstance(geojson, picogeojson.types.Point):
+                vert = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
+                results.append(SVGCircle(vert, radius, **kw))
 
-        elif isinstance(geojson, picogeojson.types.Polygon):
-            for ring in geojson.coordinates:
-                verts = [flip(*self.transform(*self.projection(*xy)))
-                        for xy in ring]
-                results.append(SVGPolygon(verts, **kw))
+            elif isinstance(geojson, picogeojson.types.LineString):
+                verts = [flip_y(*self.transform(*self.projection(*xy)))
+                            for xy in geojson.coordinates]
+                results.append(SVGPath(verts, **kw))
 
-        elif isinstance(geojson, picogeojson.types.GeometryCollection):
-            for g in geojson.geometries:
-                results.extend(self.from_geojson(g))
+            elif isinstance(geojson, picogeojson.types.Polygon):
+                for ring in geojson.coordinates:
+                    verts = [flip_y(*self.transform(*self.projection(*xy)))
+                            for xy in ring]
+                    results.append(SVGPolygon(verts, **kw))
 
-        elif isinstance(geojson, picogeojson.types.Feature):
-            results.extend(self.from_geojson(geojson.geometry))
+            elif isinstance(geojson, picogeojson.types.MultiPoint):
+                for vert in geojson.coordinates:
+                    vert_ = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
+                    results.append(SVGCircle(vert_, radius, **kw))
 
-        elif isinstance(geojson, picogeojson.types.FeatureCollection):
-            for g in geojson.features:
-                results.extend(self.from_geojson(g))
+            elif isinstance(geojson, picogeojson.types.MultiLineString):
+                for ls in geojson.coordinates:
+                    verts = [flip_y(*self.transform(*self.projection(*xy)))
+                             for xy in verts]
+                    results.append(SVGPath(verts, **kw))
 
-        else:
-            raise NotImplementedError()
+            elif isinstance(geojson, picogeojson.types.MultiPolygon):
+                for poly in geojson.coordinates:
+                    for ring in poly:
+                        verts = [flip_y(*self.transform(*self.projection(*xy)))
+                                for xy in ring]
+                        results.append(SVGPolygon(verts, **kw))
+
+            elif isinstance(geojson, picogeojson.types.GeometryCollection):
+                for g in geojson.geometries:
+                    pending.append(g)
+
+            elif isinstance(geojson, picogeojson.types.Feature):
+                p = {k:v for k,v in geojson.properties.items() if k in properties}
+                pending.append(geojson.geometry, **p)
+
+            elif isinstance(geojson, picogeojson.types.FeatureCollection):
+                for g in geojson.features:
+                    pending.append(g)
+
+            else:
+                raise NotImplementedError()
+        self.entities.extend(results)
         return results
 
     def serialize(self):
+        """ Return an encoded SVG string """
         root = ET.Element("svg", attrib={
                                 "width": str(self.width),
                                 "height": str(self.height),
@@ -135,7 +186,7 @@ class MapSheet(object):
 
         return ET.tostring(root, encoding="unicode")
 
-def project_webmercator(lon, lat):
+def project_webmercator(lon, lat, z=None):
     x = 128 / math.pi * (lon*math.pi/180.0 + math.pi)
     y = 128 / math.pi * (math.pi - math.log(math.tan(math.pi * (0.25 + lat/360))))
     return x, y

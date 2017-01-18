@@ -14,7 +14,7 @@ class MapSheetTests(unittest.TestCase):
         buf = io.StringIO()
         with mapsheet.MapSheet(buf) as sheet:
             sheet.style = "#empty { stroke: black; fill: red; }"
-            sheet.add(poly)
+            sheet.add_svg(poly)
 
         buf.seek(0)
         self.assertEqual(buf.read(),
@@ -22,13 +22,13 @@ class MapSheetTests(unittest.TestCase):
         return
 
 
-    def test_polygons_from_string(self):
+    def test_geojson_string(self):
         with open("tests/vancouver_island/vancouver_island.geojson") as f:
             s = f.read()
 
         buf = io.StringIO()
         with mapsheet.MapSheet(buf, bbox=(-129, 48, -123, 51)) as sheet:
-            sheet.add(s)
+            sheet.add_geojson(s)
 
         self.assertEqual(len(sheet.entities), 22)
         return
