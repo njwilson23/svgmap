@@ -2,7 +2,7 @@ import unittest
 import io
 import sys
 sys.path.append(".")
-from svgmap import svg, mapsheet
+from worldly import svg, mapsheet
 
 class MapSheetTests(unittest.TestCase):
 
@@ -23,7 +23,7 @@ class MapSheetTests(unittest.TestCase):
 
 
     def test_geojson_string(self):
-        with open("tests/vancouver_island/vancouver_island.geojson") as f:
+        with open("tests/vancouver_island.geojson") as f:
             s = f.read()
 
         buf = io.StringIO()

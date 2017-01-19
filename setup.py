@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = "svgmap",
+    name = "worldly",
     version = "0.1.0",
     author = "Nat Wilson",
     author_email = "natw@fortyninemaps.com",

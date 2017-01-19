@@ -1,13 +1,12 @@
 # SVG display maps
 
-The *svgmaps* package makes it simple to create geographically-correct SVG maps
-from Python.
+The *Worldly* package builds geographically-correct SVG maps from JSON.
 
 Example:
 
 ```python
 import json
-from svgmaps import MapSheet, Stylesheet, Graticule, Scalebar, marshall
+from worldly import MapSheet, Stylesheet, Graticule, Scalebar, marshall
 
 with open("world_land.json") as f:
     continents = marshall(json.load(f))
@@ -28,7 +27,7 @@ Maps can be bound to data to create chloropleth maps:
 
 ```python
 import json
-from svgmaps import MapSheet, marshall
+from worldly import MapSheet, marshall
 
 with open("states.json") as f:
     states = marshall(json.load(f))

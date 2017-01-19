@@ -1,4 +1,4 @@
-# svgmap
+# Worldy
 
 Compose GeoJSON/TopoJSON vector features into SVG maps.
 
@@ -6,30 +6,31 @@ Compose GeoJSON/TopoJSON vector features into SVG maps.
 
 ```python
 import requests
-import svgmap
+import worldly
 
-with svgmap.MapSheet("demo.svg", bbox=(-129, 47.5, -122, 51)) as mapsheet:
+with worldly.MapSheet("demo.svg", bbox=(-129, 47.5, -122, 51)) as mapsheet:
+with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
 
     mapsheet.style = """
-    polygon { fill: lightsteelblue; transition-duration: 0.5s; }
-    polygon:hover { fill: cadetblue; transition-duration: 0.3s; }
+    polygon { fill: #222222 }
     .earthquake { fill: firebrick; }
     """
 
-    mapsheet.add_geojson_file("vancouver_island.geojson")
+    mapsheet.add_geojson_file("tests/haidagwai.geojson")
 
     r = requests.get("http://earthquake.usgs.gov/fdsnws/event/1/query?",
                      {"format":      "geojson",
-                      "starttime":   "2016-01-01",
+                      "starttime":   "2012-01-16",
                       "endtime":     "2017-01-15",
-                      "latitude":    49,
-                      "longitude":   -124,
-                      "maxradiuskm": 300})
+                      "latitude":    53,
+                      "longitude":   -132,
+                      "maxradiuskm": 200})
 
     if r.status_code == 200:
-        mapsheet.add_geojson(r.text, radius=3.0, class_name="earthquake")
+        mapsheet.add_geojson(r.text, radius="magnitude", rscale=lambda a: 0.1*a*a,
+                             class_name="earthquake")
 ```
 produces
 
-![Vancouver Island](https://cdn.rawgit.com/njwilson23/svgmap/master/doc/demo.svg)
+![Vancouver Island](https://cdn.rawgit.com/njwilson23/worldly/master/doc/demo.svg)
 
