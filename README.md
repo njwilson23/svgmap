@@ -8,7 +8,6 @@ Compose GeoJSON/TopoJSON vector features into SVG maps.
 import requests
 import worldly
 
-with worldly.MapSheet("demo.svg", bbox=(-129, 47.5, -122, 51)) as mapsheet:
 with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
 
     mapsheet.style = """
@@ -27,7 +26,9 @@ with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
                       "maxradiuskm": 200})
 
     if r.status_code == 200:
-        mapsheet.add_geojson(r.text, radius="magnitude", rscale=lambda a: 0.1*a*a,
+        mapsheet.add_geojson(r.text,
+                             prop_radius="magnitude",
+                             rscale=lambda a: 0.1*a*a,
                              class_name="earthquake")
 ```
 produces

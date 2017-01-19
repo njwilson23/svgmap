@@ -108,7 +108,7 @@ class MapSheet(object):
             if name in kw:
                 svg_attrs[name.replace("_", "-")] = kw[name]
 
-
+        default_radius = kw.get("radius", 4.0)
         radius_scale = kw.get("rscale", lambda a: a)
 
         def flip_y(x, y):
@@ -123,7 +123,7 @@ class MapSheet(object):
             pending = pending[1:]
 
             if isinstance(geojson, picogeo.types.Point):
-                r = radius_scale(params.get(kw.get("radius", None), 4.0))
+                r = radius_scale(params.get(kw.get("prop_radius", None), default_radius))
                 vert = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
                 results.append(SVGCircle(vert, r, **cls_id, **svg_attrs))
 
@@ -139,7 +139,7 @@ class MapSheet(object):
                     results.append(SVGPolygon(verts, **cls_id, **svg_attrs))
 
             elif isinstance(geojson, picogeo.types.MultiPoint):
-                r = radius_scale(params.get(kw.get("radius", None), 4.0))
+                r = radius_scale(params.get(kw.get("prop_radius", None), default_radius))
                 for vert in geojson.coordinates:
                     vert_ = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
                     results.append(SVGCircle(vert_, r, **cls_id, **svg_attrs))

@@ -26,9 +26,9 @@ class SVGCircle(SVGNode):
         return
 
     def svg(self):
-        attrs = {"cx": str(self.vertex[0]),
-                 "cy": str(self.vertex[1]),
-                 "r": str(self.radius)}
+        attrs = {"cx": str(round(self.vertex[0], 3)),
+                 "cy": str(round(self.vertex[1], 3)),
+                 "r": str(round(self.radius, 3))}
         attrs = self._add_id_class(attrs)
         return ET.Element("circle", attrib=attrs)
 
@@ -64,7 +64,7 @@ class SVGPolygon(SVGNode):
         return
 
     def svg(self):
-        point_string = " ".join(["{0},{1}".format(x, y) for (x, y) in self.vertices])
+        point_string = " ".join(["{0},{1}".format(round(x, 3), round(y, 3)) for (x, y) in self.vertices])
         attrs = {"points": point_string}
         self._add_id_class(attrs)
         return ET.Element("polygon", attrib=attrs)
