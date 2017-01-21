@@ -1,6 +1,6 @@
 import math
 import xml.etree.ElementTree as ET
-import picogeo
+import picogeojson
 from .svg import SVGNode, SVGCircle, SVGPolygon
 
 class MapSheet(object):
@@ -74,7 +74,7 @@ class MapSheet(object):
 
     def add_geojson(self, *strings, **kw):
         """ Add GeoJSON strings """
-        return [self._add_picogeojson_tuple(picogeo.fromstring(s), **kw)
+        return [self._add_picogeojsonjson_tuple(picogeojson.fromstring(s), **kw)
                 for s in strings]
 
     def add_svg(self, *svgnodes):
@@ -85,8 +85,8 @@ class MapSheet(object):
             else:
                 raise ValueError("{} not an instance of SVGNode".format(node))
 
-    def _add_picogeojson_tuple(self, *inputs, **kw):
-        """ Convert picogeo namedtuples to SVGNodes and add to self.entities
+    def _add_picogeojsonjson_tuple(self, *inputs, **kw):
+        """ Convert picogeojson namedtuples to SVGNodes and add to self.entities
 
         Keyword arguments
         -----------------
@@ -122,49 +122,49 @@ class MapSheet(object):
             geojson, params = pending[0]
             pending = pending[1:]
 
-            if isinstance(geojson, picogeo.types.Point):
+            if isinstance(geojson, picogeojson.types.Point):
                 r = radius_scale(params.get(kw.get("prop_radius", None), default_radius))
                 vert = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
                 results.append(SVGCircle(vert, r, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.LineString):
+            elif isinstance(geojson, picogeojson.types.LineString):
                 verts = [flip_y(*self.transform(*self.projection(*xy)))
                             for xy in geojson.coordinates]
                 results.append(SVGPath(verts, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.Polygon):
+            elif isinstance(geojson, picogeojson.types.Polygon):
                 for ring in geojson.coordinates:
                     verts = [flip_y(*self.transform(*self.projection(*xy)))
                             for xy in ring]
                     results.append(SVGPolygon(verts, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.MultiPoint):
+            elif isinstance(geojson, picogeojson.types.MultiPoint):
                 r = radius_scale(params.get(kw.get("prop_radius", None), default_radius))
                 for vert in geojson.coordinates:
                     vert_ = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
                     results.append(SVGCircle(vert_, r, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.MultiLineString):
+            elif isinstance(geojson, picogeojson.types.MultiLineString):
                 for ls in geojson.coordinates:
                     verts = [flip_y(*self.transform(*self.projection(*xy)))
                              for xy in verts]
                     results.append(SVGPath(verts, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.MultiPolygon):
+            elif isinstance(geojson, picogeojson.types.MultiPolygon):
                 for poly in geojson.coordinates:
                     for ring in poly:
                         verts = [flip_y(*self.transform(*self.projection(*xy)))
                                 for xy in ring]
                         results.append(SVGPolygon(verts, **cls_id, **svg_attrs))
 
-            elif isinstance(geojson, picogeo.types.GeometryCollection):
+            elif isinstance(geojson, picogeojson.types.GeometryCollection):
                 for g in geojson.geometries:
                     pending.append((g, {}))
 
-            elif isinstance(geojson, picogeo.types.Feature):
+            elif isinstance(geojson, picogeojson.types.Feature):
                 pending.append((geojson.geometry, geojson.properties))
 
-            elif isinstance(geojson, picogeo.types.FeatureCollection):
+            elif isinstance(geojson, picogeojson.types.FeatureCollection):
                 for g in geojson.features:
                     pending.append((g, {}))
 

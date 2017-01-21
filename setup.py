@@ -8,7 +8,7 @@ setup(
     description = "GeoJSON to SVG converter",
     license = "MIT",
     packages = find_packages(),
-    install_requires = ["picogeo"],
+    install_requires = ["picogeojson"],
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
