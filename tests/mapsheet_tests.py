@@ -67,7 +67,7 @@ class MapSheetTests(unittest.TestCase):
             sheet.add_geojson(s, prop_fill="color")
         buf.seek(0)
         self.assertTrue(xml_equal(buf.read(),
-            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><path d="M251.388889,248.208906 L1.388889,0.0 L0.694444,-1.791639 L-1.388889,0.0 L-0.694444,1.791639 Z" /></svg>'))
+            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><path d="M251.388889,248.208906 l1.388889,0.0 l0.694444,-1.791639 l-1.388889,0.0 l-0.694444,1.791639 Z" /></svg>'))
 
 if __name__ == "__main__":
     unittest.main()

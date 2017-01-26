@@ -22,17 +22,17 @@ class SVGOutputTests(unittest.TestCase):
         svg_path = svg.SVGPath([[(0, -1), (1, -1), (1, 0), (0, 0)],
                                 [(0, 0), (1, 0), (1, 1), (0, 1)]], closed=False)
         out = str(svg_path)
-        self.assertTrue(xml_equal('<path d="M0,-1 L1,0 L0,1 L-1,0 M0,0 L1,0 L0,1 L-1,0" />', out))
+        self.assertTrue(xml_equal('<path d="M0,-1 l1,0 l0,1 l-1,0 M0,0 l1,0 l0,1 l-1,0" />', out))
 
     def test_open_path(self):
         svg_path = svg.SVGPath([[(0, 0), (1, 0), (1, 1), (0, 1)]], closed=False)
         out = str(svg_path)
-        self.assertTrue(xml_equal('<path d="M0,0 L1,0 L0,1 L-1,0" />', out))
+        self.assertTrue(xml_equal('<path d="M0,0 l1,0 l0,1 l-1,0" />', out))
 
     def test_closed_path(self):
         svg_path = svg.SVGPath([[(0, 0), (1, 0), (1, 1), (0, 1)]], closed=True)
         out = str(svg_path)
-        self.assertTrue(xml_equal('<path d="M0,0 L1,0 L0,1 L-1,0 Z" />', out))
+        self.assertTrue(xml_equal('<path d="M0,0 l1,0 l0,1 l-1,0 Z" />', out))
 
 if __name__ == "__main__":
     unittest.main()

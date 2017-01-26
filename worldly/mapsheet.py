@@ -153,12 +153,16 @@ class MapSheet(object):
 
             if type(geojson).__name__ == "Point":
                 vert = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
-                results.append(SVGPath([[vert]], closed=True, stroke_linecap="round", class_name=class_name, id_name=id_name))
+                results.append(SVGPath([[vert]], closed=True,
+                                                 stroke_linecap="round",
+                                                 class_name=class_name,
+                                                 id_name=id_name))
 
             elif type(geojson).__name__ == "LineString":
                 verts = [flip_y(*self.transform(*self.projection(*xy)))
                             for xy in geojson.coordinates]
-                results.append(SVGPath([verts], class_name=class_name, id_name=id_name))
+                results.append(SVGPath([verts], class_name=class_name,
+                                                id_name=id_name))
 
             elif type(geojson).__name__ == "Polygon":
                 ring_list = []
@@ -166,7 +170,9 @@ class MapSheet(object):
                     verts = [flip_y(*self.transform(*self.projection(*xy)))
                             for xy in ring]
                     ring_list.append(verts)
-                results.append(SVGPath(ring_list, closed=True, class_name=class_name, id_name=id_name))
+                results.append(SVGPath(ring_list, closed=True,
+                                                  class_name=class_name,
+                                                  id_name=id_name))
 
             elif type(geojson).__name__ == "MultiPoint":
                 verts = []
@@ -174,26 +180,30 @@ class MapSheet(object):
                     v = flip_y(*self.transform(*self.projection(*xy)))
                     verts.append(v)
                 verts_listed = [[v] for v in verts]
-                results.append(SVGPath(verts_listed, closed=True, stroke_linecap="round", class_name=class_name, id_name=id_name))
+                results.append(SVGPath(verts_listed, closed=True,
+                                                     stroke_linecap="round",
+                                                     class_name=class_name,
+                                                     id_name=id_name))
 
             elif type(geojson).__name__ == "MultiLineString":
-                verts = []
+                linestrings = []
                 for ls in geojson.coordinates:
                     v = [flip_y(*self.transform(*self.projection(*xy)))
-                         for xy in geojson.vertices]
-                    verts.append(v)
-                results.append(SVGPath(verts, class_name=class_name, id_name=id_name))
+                         for xy in ls]
+                    linestrings.append(v)
+                results.append(SVGPath(linestrings, class_name=class_name,
+                                                    id_name=id_name))
 
             elif type(geojson).__name__ == "MultiPolygon":
-                poly_vert_list
+                poly_list
                 for poly in geojson.coordinates:
-                    ring_vert_list = []
+                    ring_list = []
                     for ring in poly:
                         verts = [flip_y(*self.transform(*self.projection(*xy)))
                                 for xy in ring]
-                        ring_vert_list.append(verts)
-                    poly_vert_list.extend(ring_vert_list)
-                results.append(SVGPolygon(poly_vert_list, closed=True))
+                        ring_list.append(verts)
+                    poly_list.extend(ring_list)
+                results.append(SVGPolygon(poly_list, closed=True))
 
             elif type(geojson).__name__ == "GeometryCollection":
                 for g in geojson.geometries:
