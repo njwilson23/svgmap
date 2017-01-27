@@ -2,29 +2,7 @@ import math
 import xml.etree.ElementTree as ET
 import picogeojson
 from .svg import SVGNode, SVGCircle, SVGPolygon, SVGPath
-
-def project_webmercator(lon, lat, z=None):
-    x = 128 / math.pi * (lon*math.pi/180.0 + math.pi)
-    y = 128 / math.pi * (math.pi - math.log(math.tan(math.pi * (0.25 + lat/360))))
-    return x, y
-
-def project_sph_stereographic(lon, lat, k0, lon0, lat1):
-    phi = lat*math.pi/180.0
-    phi1 = lat1*math.pi/180.0
-    lamda = lon*math.pi/180.0
-    lamda0 = lon0*math.pi/180.0
-    k = 2 * k0 / (1 + math.sin(phi1)*math.sin(phi) +
-                      math.cos(phi1)*math.cos(phi)*math.cos(lamda-lamda0))
-    x = k * math.cos(phi) * math.sin(lamda-lamda0)
-    y = k * (math.cos(phi1) * math.sin(phi) -
-             math.sin(phi1) * math.cos(phi) * math.cos(lamda-lamda0))
-    return x, y
-
-def project_sph_north_polar_stereographic(lon, lat, z=None):
-    return project_sph_stereographic(lon, lat, 1.0, 0.0, 90.0)
-
-def project_sph_south_polar_stereographic(lon, lat, z=None):
-    return project_sph_stereographic(lon, lat, 1.0, 0.0, -90.0)
+from .projection import WebMercator
 
 class MapSheet(object):
     """ A MapSheet object represents a map image. It is backed by a *dest*,
@@ -38,7 +16,7 @@ class MapSheet(object):
     """
 
     def __init__(self, dest, width=None, height=None, style=None,
-            projection=project_webmercator, bbox=None):
+            projection=WebMercator, bbox=None):
 
         self.dest = dest
         self.projection = projection
@@ -172,14 +150,14 @@ class MapSheet(object):
             pending = pending[1:]
 
             if type(geojson).__name__ == "Point":
-                vert = flip_y(*self.transform(*self.projection(*geojson.coordinates)))
+                vert = flip_y(*self.transform(*self.projection(*geojson.coordinates[:2])))
                 results.append(SVGPath([[vert]], closed=True,
                                                  stroke_linecap="round",
                                                  class_name=class_name,
                                                  id_name=id_name))
 
             elif type(geojson).__name__ == "LineString":
-                verts = [flip_y(*self.transform(*self.projection(*xy)))
+                verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
                             for xy in geojson.coordinates]
                 results.append(SVGPath([verts], class_name=class_name,
                                                 id_name=id_name))
@@ -187,7 +165,7 @@ class MapSheet(object):
             elif type(geojson).__name__ == "Polygon":
                 ring_list = []
                 for ring in geojson.coordinates:
-                    verts = [flip_y(*self.transform(*self.projection(*xy)))
+                    verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
                             for xy in ring]
                     ring_list.append(verts)
                 results.append(SVGPath(ring_list, closed=True,
@@ -197,7 +175,7 @@ class MapSheet(object):
             elif type(geojson).__name__ == "MultiPoint":
                 verts = []
                 for xy in geojson.coordinates:
-                    v = flip_y(*self.transform(*self.projection(*xy)))
+                    v = flip_y(*self.transform(*self.projection(*xy[:2])))
                     verts.append(v)
                 verts_listed = [[v] for v in verts]
                 results.append(SVGPath(verts_listed, closed=True,
@@ -208,7 +186,7 @@ class MapSheet(object):
             elif type(geojson).__name__ == "MultiLineString":
                 linestrings = []
                 for ls in geojson.coordinates:
-                    v = [flip_y(*self.transform(*self.projection(*xy)))
+                    v = [flip_y(*self.transform(*self.projection(*xy[:2])))
                          for xy in ls]
                     linestrings.append(v)
                 results.append(SVGPath(linestrings, class_name=class_name,
@@ -219,7 +197,7 @@ class MapSheet(object):
                 for poly in geojson.coordinates:
                     ring_list = []
                     for ring in poly:
-                        verts = [flip_y(*self.transform(*self.projection(*xy)))
+                        verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
                                 for xy in ring]
                         ring_list.append(verts)
                     poly_list.extend(ring_list)

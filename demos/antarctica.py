@@ -1,7 +1,8 @@
 import worldly
+from worldly.projection import SouthPolarStereographic
 
 with worldly.MapSheet("antarctica.svg", bbox=(-135, -50, 45, -50),
-            projection=worldly.project_sph_south_polar_stereographic) as mapsheet:
+            projection=SouthPolarStereographic) as mapsheet:
 
     mapsheet.style = """
     .ice { fill: #AAAAAA;
