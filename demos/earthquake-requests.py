@@ -22,6 +22,6 @@ with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
     if r.status_code == 200:
         mapsheet.add_geojson(r.text,
                              dynamic_params={"stroke-width": "mag"},
-                             scales={"stroke-width": lambda a: 0.3*a*a},
+                             scales={"stroke-width": lambda a: 0.002*a*a},
                              class_name="earthquake")
 

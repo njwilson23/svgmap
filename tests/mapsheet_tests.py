@@ -18,7 +18,7 @@ class MapSheetTests(unittest.TestCase):
 
         buf.seek(0)
         self.assertTrue(xml_equal(buf.read(),
-            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><polygon id="empty" points="100,100 400,100 400,400 100,400" /><style>#empty { stroke: black; fill: red; }</style></svg>'))
+            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><style>#empty { stroke: black; fill: red; }</style><g transform="translate(250.0,250.0) scale(1.953125,2.5185974717881097) translate(-128.0,-128.00000000000003)"><polygon id="empty" points="100,100 400,100 400,400 100,400" /></g></svg>'))
         return
 
     def test_geojson_string(self):
@@ -41,7 +41,7 @@ class MapSheetTests(unittest.TestCase):
             sheet.add_geojson(s, static_params={"stroke-width":3.14})
         buf.seek(0)
         self.assertTrue(xml_equal(buf.read(),
-                '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><path d="M251.388889,244.624535 Z" stroke-linecap="round" stroke-width="3.14" /></svg>'))
+            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><g transform="translate(250.0,250.0) scale(1.953125,2.5185974717881097) translate(-128.0,-128.00000000000003)"><path d="M128.7111111111111,125.86569122229008 Z" stroke-linecap="round" stroke-width="3.14" /></g></svg>'))
 
     def test_svg_point_dynamic_radius(self):
         s = '''{"type": "Feature",
@@ -52,7 +52,7 @@ class MapSheetTests(unittest.TestCase):
             sheet.add_geojson(s, dynamic_params={"stroke-width":"size"})
         buf.seek(0)
         self.assertTrue(xml_equal(buf.read(),
-                '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><path d="M251.388889,244.624535 Z" stroke-linecap="round" stroke-width="5.0" /></svg>'))
+            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><g transform="translate(250.0,250.0) scale(1.953125,2.5185974717881097) translate(-128.0,-128.00000000000003)"><path d="M128.7111111111111,125.86569122229008 Z" stroke-linecap="round" stroke-width="5.0" /></g></svg>'))
 
     def test_svg_polygon_fill(self):
         s = '''{"type": "Feature",
@@ -67,7 +67,7 @@ class MapSheetTests(unittest.TestCase):
             sheet.add_geojson(s, prop_fill="color")
         buf.seek(0)
         self.assertTrue(xml_equal(buf.read(),
-            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><path d="M251.388889,248.208906 l1.388889,0.0 l0.694444,-1.791639 l-1.388889,0.0 l-0.694444,1.791639 Z" /></svg>'))
+            '<svg height="500" width="500" xmlns="http://www.w3.org/2000/svg"><g transform="translate(250.0,250.0) scale(1.953125,2.5185974717881097) translate(-128.0,-128.00000000000003)"><path d="M128.7111111111111,127.28885278333395 l0.7111111111111086,0.0 l0.3555555555555543,-0.7113639160101286 l-0.7111111111111086,0.0 l-0.3555555555555543,0.7113639160101286 Z" /></g></svg>'))
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,6 +39,6 @@ class SphericalStereographic(Projection):
         return x, y
 
 WebMercator = SphericalMercator(128)
-NorthPolarStereographic = SphericalStereographic(1.0, 0.0, 90.0)
-SouthPolarStereographic = SphericalStereographic(1.0, 0.0, -90.0)
+NorthPolarStereographic = SphericalStereographic(1000.0, 0.0, 90.0)
+SouthPolarStereographic = SphericalStereographic(1000.0, 0.0, -90.0)
 

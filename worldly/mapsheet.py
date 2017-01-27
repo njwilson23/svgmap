@@ -1,7 +1,7 @@
 import math
 import xml.etree.ElementTree as ET
 import picogeojson
-from .svg import SVGNode, SVGCircle, SVGPolygon, SVGPath
+from .svg import SVGNode, SVGRoot, SVGCircle, SVGPolygon, SVGPath
 from .projection import WebMercator
 
 class MapSheet(object):
@@ -35,14 +35,18 @@ class MapSheet(object):
 
         ll = self.projection(bbox[0], bbox[1])
         ur = self.projection(bbox[2], bbox[3])
-        self._bbox = (ll[0], ll[1], ur[0], ur[1])
+        _bbox = (ll[0], ll[1], ur[0], ur[1])
+        self.bbox_proj = _bbox
 
-        def transform(x, y):
-            ux = (x-self._bbox[0]) / (self._bbox[2]-self._bbox[0]) * self.width
-            uy = (y-self._bbox[1]) / (self._bbox[3]-self._bbox[1]) * self.height
-            return ux, uy
+        self.transform = \
+                "translate({dx1},{dy1}) scale({sx},{sy}) translate({dx0},{dy0})".format(
+                            sx=width / (_bbox[2]-_bbox[0]),
+                            sy=-height / (_bbox[3]-_bbox[1]),
+                            dx1=0.5*width,
+                            dy1=0.5*height,
+                            dx0=-0.5*(_bbox[0]+_bbox[2]),
+                            dy0=-0.5*(_bbox[1]+_bbox[3]))
 
-        self.transform = transform
         self.width = width
         self.height = height
         self.style = style
@@ -107,13 +111,17 @@ class MapSheet(object):
             if type(geojson).__name__ == "FeatureCollection":
                 pending.extend(geojson.features)
             elif type(geojson).__name__ == "Feature":
-                intermediate = self._geometry_to_svg(geojson.geometry, class_name=class_name, id_name=id_name)
+                intermediate = self._geometry_to_svg(geojson.geometry,
+                                                     class_name=class_name,
+                                                     id_name=id_name)
                 _set_attrs(intermediate, static_params, scales)
                 _set_attrs_from_properties(intermediate, dynamic_params, scales,
                                            geojson.properties)
                 results.extend(intermediate)
             else:
-                intermediate = self._geometry_to_svg(geojson, class_name=class_name, id_name=id_name)
+                intermediate = self._geometry_to_svg(geojson,
+                                                     class_name=class_name,
+                                                     id_name=id_name)
                 _set_attrs(intermediate, static_params, scales)
                 results.extend(intermediate)
 
@@ -122,26 +130,21 @@ class MapSheet(object):
 
     def serialize(self):
         """ Return an encoded SVG string """
-        root = ET.Element("svg", attrib={
-                                "width": str(self.width),
-                                "height": str(self.height),
-                                "xmlns": "http://www.w3.org/2000/svg"
-                          })
+        root = SVGRoot(self.width, self.height).svg()
+        g = SVGNode("g", transform=self.transform).svg()
 
         for entity in self.entities:
-            root.append(entity.svg())
+            g.append(entity.svg())
 
         if len(self.style) != 0:
             style = ET.Element("style")
             style.text = self.style
             root.append(style)
 
+        root.append(g)
         return ET.tostring(root, encoding="unicode")
 
     def _geometry_to_svg(self, geojson, class_name=None, id_name=None):
-
-        def flip_y(x, y):
-            return x, self.height-y
 
         results = []
         pending = [geojson]
@@ -150,23 +153,21 @@ class MapSheet(object):
             pending = pending[1:]
 
             if type(geojson).__name__ == "Point":
-                vert = flip_y(*self.transform(*self.projection(*geojson.coordinates[:2])))
+                vert = self.projection(*geojson.coordinates[:2])
                 results.append(SVGPath([[vert]], closed=True,
                                                  stroke_linecap="round",
                                                  class_name=class_name,
                                                  id_name=id_name))
 
             elif type(geojson).__name__ == "LineString":
-                verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
-                            for xy in geojson.coordinates]
+                verts = [self.projection(*xy[:2]) for xy in geojson.coordinates]
                 results.append(SVGPath([verts], class_name=class_name,
                                                 id_name=id_name))
 
             elif type(geojson).__name__ == "Polygon":
                 ring_list = []
                 for ring in geojson.coordinates:
-                    verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
-                            for xy in ring]
+                    verts = [self.projection(*xy[:2]) for xy in ring]
                     ring_list.append(verts)
                 results.append(SVGPath(ring_list, closed=True,
                                                   class_name=class_name,
@@ -175,7 +176,7 @@ class MapSheet(object):
             elif type(geojson).__name__ == "MultiPoint":
                 verts = []
                 for xy in geojson.coordinates:
-                    v = flip_y(*self.transform(*self.projection(*xy[:2])))
+                    v = self.projection(*xy[:2])
                     verts.append(v)
                 verts_listed = [[v] for v in verts]
                 results.append(SVGPath(verts_listed, closed=True,
@@ -186,8 +187,7 @@ class MapSheet(object):
             elif type(geojson).__name__ == "MultiLineString":
                 linestrings = []
                 for ls in geojson.coordinates:
-                    v = [flip_y(*self.transform(*self.projection(*xy[:2])))
-                         for xy in ls]
+                    v = [self.projection(*xy[:2]) for xy in ls]
                     linestrings.append(v)
                 results.append(SVGPath(linestrings, class_name=class_name,
                                                     id_name=id_name))
@@ -197,8 +197,7 @@ class MapSheet(object):
                 for poly in geojson.coordinates:
                     ring_list = []
                     for ring in poly:
-                        verts = [flip_y(*self.transform(*self.projection(*xy[:2])))
-                                for xy in ring]
+                        verts = [self.projection(*xy[:2]) for xy in ring]
                         ring_list.append(verts)
                     poly_list.extend(ring_list)
                 results.append(SVGPath(poly_list, closed=True,

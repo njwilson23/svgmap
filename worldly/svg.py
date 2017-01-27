@@ -2,7 +2,8 @@ import xml.etree.ElementTree as ET
 
 class SVGNode(object):
 
-    def __init__(self, id_name=None, class_name=None, **kw):
+    def __init__(self, name, id_name=None, class_name=None, **kw):
+        self.name = name
         self.attrs = {}
         for key, value in kw.items():
             self.attrs[key.replace("_", "-")] = str(value)
@@ -15,18 +16,35 @@ class SVGNode(object):
     def __str__(self):
         return ET.tostring(self.svg(), encoding="unicode")
 
+    def svg(self):
+        return ET.Element(self.name, attrib=self.attrs)
+
+class SVGRoot(SVGNode):
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        super(SVGRoot, self).__init__("svg")
+
+    def svg(self):
+        return ET.Element("svg", attrib={
+                                "width": str(self.width),
+                                "height": str(self.height),
+                                "xmlns": "http://www.w3.org/2000/svg"
+                          })
+
 class SVGCircle(SVGNode):
 
     def __init__(self, vertex, radius, **kw):
         self.vertex = vertex
         self.radius = radius
-        super(SVGCircle, self).__init__(**kw)
+        super(SVGCircle, self).__init__("circle", **kw)
         return
 
     def svg(self):
-        self.attrs["cx"] = str(round(self.vertex[0], 3))
-        self.attrs["cy"] = str(round(self.vertex[1], 3))
-        self.attrs["r"] = str(round(self.radius, 3))
+        self.attrs["cx"] = str(self.vertex[0])
+        self.attrs["cy"] = str(self.vertex[1])
+        self.attrs["r"] = str(self.radius)
         return ET.Element("circle", attrib=self.attrs)
 
 class SVGPath(SVGNode):
@@ -34,7 +52,7 @@ class SVGPath(SVGNode):
     def __init__(self, vertices, closed=False, **kw):
         self.vertices = vertices
         self.closed = closed
-        super(SVGPath, self).__init__(**kw)
+        super(SVGPath, self).__init__("path", **kw)
         return
 
     def svg(self):
@@ -44,8 +62,8 @@ class SVGPath(SVGNode):
             sy = linestring[0][1]
             Dx = [b[0]-a[0] for a, b in zip(linestring[:-1], linestring[1:])]
             Dy = [b[1]-a[1] for a, b in zip(linestring[:-1], linestring[1:])]
-            d.append("M{sx},{sy}".format(sx=round(sx, 6), sy=round(sy, 6)))
-            d.extend(["l{dx},{dy}".format(dx=round(dx, 6), dy=round(dy, 6))
+            d.append("M{sx},{sy}".format(sx=sx, sy=sy))
+            d.extend(["l{dx},{dy}".format(dx=dx, dy=dy)
                       for (dx, dy) in zip(Dx, Dy)])
             if self.closed:
                 d.append("Z")
@@ -57,11 +75,11 @@ class SVGPolygon(SVGNode):
 
     def __init__(self, vertices, **kw):
         self.vertices = vertices
-        super(SVGPolygon, self).__init__(**kw)
+        super(SVGPolygon, self).__init__("polygon", **kw)
         return
 
     def svg(self):
-        point_string = " ".join(["{0},{1}".format(round(x, 3), round(y, 3)) for (x, y) in self.vertices])
+        point_string = " ".join(["{0},{1}".format(x, y) for (x, y) in self.vertices])
         self.attrs["points"] = point_string
         return ET.Element("polygon", attrib=self.attrs)
 
