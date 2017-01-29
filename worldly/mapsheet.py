@@ -16,10 +16,10 @@ class MapSheet(object):
 
     1. If *bbox* is provided, then the scale is computed.
     2. If *scale* and *center* are provided, *bbox* is computed.
-    3. If only *scale* is provided, *bbox* is computed assuming a center of
-       (0, 0).
-    4. If none are provided, *bbox* is assumed to be (-180, -80, 180, 80), and
-       scale is computed.
+    3. If only *scale* is provided, *bbox* is computed assuming the map center
+       is the centroid of the map entities.
+    4. If none are provided, *bbox* is taken from the map entities and scale is
+       computed.
 
     Additional keyword arguments
     - *style* sets a CSS stylesheet
@@ -80,10 +80,11 @@ class MapSheet(object):
             d = sqrt((bbox_p[2] - bbox_p[1])**2 + (bbox_p[3] - bbox_p[1])**2)
             L = sqrt(self.width**2 + self.height**2)
             scale = L/d
+            precision = 1
 
         else:                       # compute bbox from scale
             scale = self.scale
-            # must compute bbox_p
+            # must compute bbox_p and precision
             raise NotImplementedError()
 
         transform = ("translate({dx1},{dy1}) "
@@ -104,7 +105,8 @@ class MapSheet(object):
             if isinstance(entity, SVGNode):
                 svgs.append(entity)
             else:
-                g = _convert_geojson_tuple(entity, scalefunc, self.projection, **params)
+                g = _convert_geojson_tuple(entity, scalefunc, self.projection,
+                                           precision, **params)
                 svgs.extend(g)
 
         root = SVGRoot(self.width, self.height).svg()
@@ -121,19 +123,26 @@ class MapSheet(object):
         root.append(g)
         return ET.tostring(root, encoding="unicode")
 
-def _convert_geojson_tuple(geojson, scale, projection, **kw):
+def _convert_geojson_tuple(geojson, scale, projection, precision, **kw):
     """ Converts a picogeojson namedtuple to a list of SVGNode instances
 
-    Arguments
+    arguments
     ---------
     geojson : picogeojson namedtuple
-    scale : scale function
-    projection : projection function
+        geometry, feature, or featurecollection to convert
+    scale : function
+        rescales projected coordinates to map space
+    projection : function
+        projects geographical coordinates to cartesian coordinates
+    precision : float
+        number of decimal places to retain in svg coordinates
 
-    Keyword arguments
+    keyword arguments
     -----------------
     class_name : str
+        used as class attribute
     id_name : str
+        used as id attribute
     """
     static_params = kw.get("static_params", {})
     dynamic_params = kw.get("dynamic_params", {})
@@ -153,6 +162,7 @@ def _convert_geojson_tuple(geojson, scale, projection, **kw):
         elif type(geojson).__name__ == "Feature":
             intermediate = _geometry_to_svg(geojson.geometry,
                                             scale, projection,
+                                            precision=precision,
                                             class_name=class_name,
                                             id_name=id_name)
             _set_attrs(intermediate, static_params, scales)
@@ -162,6 +172,7 @@ def _convert_geojson_tuple(geojson, scale, projection, **kw):
         else:
             intermediate = _geometry_to_svg(geojson,
                                             scale, projection,
+                                            precision=precision,
                                             class_name=class_name,
                                             id_name=id_name)
             _set_attrs(intermediate, static_params, scales)
@@ -169,9 +180,11 @@ def _convert_geojson_tuple(geojson, scale, projection, **kw):
 
     return results
 
-def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
-    """ Converts a picogeojson Geometry to a list of SVGNode instances """
-
+def _geometry_to_svg(geojson, scale, projection, precision=6,
+                     class_name=None, id_name=None):
+    """ Converts a picogeojson Geometry to a list of SVGNode instances.
+    See _convert_geojson_tuple for parameters
+    """
     results = []
     pending = [geojson]
     while len(pending) != 0:
@@ -183,6 +196,7 @@ def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
             results.append(SVGPath([[vert]],
                                    closed=True,
                                    stroke_linecap="round",
+                                   precision=precision,
                                    class_name=class_name,
                                    id_name=id_name))
 
@@ -198,6 +212,7 @@ def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
                 ring_list.append(verts)
             results.append(SVGPath(ring_list,
                                    closed=True,
+                                   precision=precision,
                                    class_name=class_name,
                                    id_name=id_name))
 
@@ -210,6 +225,7 @@ def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
             results.append(SVGPath(verts_listed,
                                    closed=True,
                                    stroke_linecap="round",
+                                   precision=precision,
                                    class_name=class_name,
                                    id_name=id_name))
 
@@ -219,6 +235,7 @@ def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
                 v = [scale(projection(*xy[:2])) for xy in ls]
                 linestrings.append(v)
             results.append(SVGPath(linestrings,
+                                   precision=precision,
                                    class_name=class_name,
                                    id_name=id_name))
 
@@ -232,6 +249,7 @@ def _geometry_to_svg(geojson, scale, projection, class_name=None, id_name=None):
                 poly_list.extend(ring_list)
             results.append(SVGPath(poly_list,
                                    closed=True,
+                                   precision=precision,
                                    class_name=class_name,
                                    id_name=id_name))
 

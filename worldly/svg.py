@@ -5,8 +5,9 @@ import xml.etree.ElementTree as ET
 
 class SVGNode(object):
 
-    def __init__(self, name, id_name=None, class_name=None, **kw):
+    def __init__(self, name, id_name=None, class_name=None, precision=2, **kw):
         self.name = name
+        self.precision = precision
         self.attrs = {}
         for key, value in kw.items():
             self.attrs[key.replace("_", "-")] = str(value)
@@ -35,9 +36,9 @@ class SVGCircle(SVGNode):
 
     def __init__(self, vertex, radius, **kw):
         super(SVGCircle, self).__init__("circle", **kw)
-        self.attrs["cx"] = str(vertex[0])
-        self.attrs["cy"] = str(vertex[1])
-        self.attrs["r"] = str(radius)
+        self.attrs["cx"] = str(round(vertex[0], self.precision))
+        self.attrs["cy"] = str(round(vertex[1], self.precision))
+        self.attrs["r"] = str(round(radius, self.precision))
 
 
 class SVGPath(SVGNode):
@@ -50,8 +51,11 @@ class SVGPath(SVGNode):
     def svg(self):
         d = []
         for linestring in self.vertices:
-            d.append("M{x},{y}".format(x=linestring[0][0], y=linestring[0][1]))
-            d.extend(["L{x},{y}".format(x=x, y=y) for (x, y) in linestring[1:]])
+            d.append("M{x},{y}".format(x=round(linestring[0][0], self.precision),
+                                       y=round(linestring[0][1], self.precision)))
+            d.extend(["L{x},{y}".format(x=round(x, self.precision),
+                                        y=round(y, self.precision))
+                                        for (x, y) in linestring[1:]])
             if self.closed:
                 d.append("Z")
         self.attrs["d"] = " ".join(d)
@@ -62,6 +66,8 @@ class SVGPolygon(SVGNode):
 
     def __init__(self, vertices, **kw):
         super(SVGPolygon, self).__init__("polygon", **kw)
-        point_string = " ".join(["{0},{1}".format(x, y) for (x, y) in vertices])
+        point_string = " ".join(["{x},{y}".format(x=round(x, self.precision),
+                                                  y=round(y, self.precision))
+                                                  for (x, y) in vertices])
         self.attrs["points"] = point_string
 
