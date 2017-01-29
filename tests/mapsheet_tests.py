@@ -1,8 +1,6 @@
 import unittest
 import io
-import xml.etree.ElementTree as ET
 from worldly import svg, mapsheet
-from util import xml_equal
 
 class MapSheetTests(unittest.TestCase):
 
@@ -33,7 +31,7 @@ class MapSheetTests(unittest.TestCase):
         with mapsheet.MapSheet(buf, bbox=(-129, 48, -123, 51)) as sheet:
             sheet.add_geojson(s)
 
-        self.assertEqual(len(sheet.entities), 22)
+        self.assertEqual(len(sheet.entities), 1)
 
     def test_svg_point_static_radius(self):
         s = '''{"type": "Feature",

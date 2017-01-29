@@ -1,7 +1,7 @@
 import requests
 import worldly
 
-with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
+with worldly.MapSheet("earthquakes.svg", bbox=(-135, 51.5, -130, 54.5)) as mapsheet:
 
     mapsheet.style = """
     .land { fill: #333333; }
@@ -22,6 +22,6 @@ with worldly.MapSheet("demo.svg", bbox=(-134, 51, -130, 55)) as mapsheet:
     if r.status_code == 200:
         mapsheet.add_geojson(r.text,
                              dynamic_params={"stroke-width": "mag"},
-                             scales={"stroke-width": lambda a: 0.002*a*a},
+                             scales={"stroke-width": lambda a: 0.02*a*a},
                              class_name="earthquake")
 

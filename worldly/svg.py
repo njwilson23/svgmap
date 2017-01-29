@@ -51,7 +51,7 @@ class SVGPath(SVGNode):
         d = []
         for linestring in self.vertices:
             d.append("M{x},{y}".format(x=linestring[0][0], y=linestring[0][1]))
-            d.extend(["L{x},{y}".format(x=x, y=y) for (x, y) in linestring])
+            d.extend(["L{x},{y}".format(x=x, y=y) for (x, y) in linestring[1:]])
             if self.closed:
                 d.append("Z")
         self.attrs["d"] = " ".join(d)

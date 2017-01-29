@@ -1,6 +1,5 @@
 import unittest
-import io
-from worldly import svg, mapsheet
+from worldly import svg
 from util import xml_equal
 
 class SVGOutputTests(unittest.TestCase):

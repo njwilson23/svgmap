@@ -1,5 +1,8 @@
+""" Implements coordinate projections """
+
 import math
-from math import sin, cos, tan, pi
+from math import sin, cos, tan, acos, asin, sqrt, pi
+
 
 class Projection(object):
 
@@ -8,6 +11,7 @@ class Projection(object):
 
     def project(self, lon, lat):
         return lon, lat
+
 
 class SphericalMercator(Projection):
 
@@ -18,6 +22,7 @@ class SphericalMercator(Projection):
         x = self.R / pi * (lon*pi/180.0 + pi)
         y = self.R / pi * (pi - math.log(tan(pi * (0.25 + lat/360))))
         return x, y
+
 
 class SphericalStereographic(Projection):
 
@@ -38,7 +43,22 @@ class SphericalStereographic(Projection):
                  sin(phi1) * cos(phi) * cos(lamda-lamda0))
         return x, y
 
+
+def sphere_distance(lon1, lat1, lon2, lat2, radius=1.0):
+    dx = abs(lon1-lon2)
+    dy = abs(lat1-lat2)
+
+    if dx > 0.01 or dy > 0.01:      # use spherical law of cosines
+        d_ = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(dx))
+
+    else:                           # use haversine
+        d_ = (2 * asin(sqrt(sin(dy / 2.)**2 + cos(lat1) * cos(lat2) * sin(dx / 2.)**2)))
+
+    return radius * d_
+
+
+R = 6371000
 WebMercator = SphericalMercator(128)
-NorthPolarStereographic = SphericalStereographic(1000.0, 0.0, 90.0)
-SouthPolarStereographic = SphericalStereographic(1000.0, 0.0, -90.0)
+NorthPolarStereographic = SphericalStereographic(R, 0.0, 90.0)
+SouthPolarStereographic = SphericalStereographic(R, 0.0, -90.0)
 
