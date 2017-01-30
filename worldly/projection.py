@@ -58,7 +58,7 @@ def sphere_distance(lon1, lat1, lon2, lat2, radius=1.0):
 
 
 R = 6371000
-WebMercator = SphericalMercator(128)
+WebMercator = SphericalMercator(R)
 NorthPolarStereographic = SphericalStereographic(R, 0.0, 90.0)
 SouthPolarStereographic = SphericalStereographic(R, 0.0, -90.0)
 

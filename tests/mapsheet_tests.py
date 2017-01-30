@@ -1,5 +1,7 @@
 import unittest
 import io
+from picogeojson import (Point, LineString, Polygon,
+                         GeometryCollection, Feature, FeatureCollection)
 from worldly import svg, mapsheet
 
 class MapSheetTests(unittest.TestCase):
@@ -66,6 +68,52 @@ class MapSheetTests(unittest.TestCase):
             sheet.add_geojson(s, dynamic_params=dict(fill="color"))
         buf.seek(0)
         self.assertTrue('fill="#FF0000"' in buf.read())
+
+
+class ProjectedBboxTests(unittest.TestCase):
+
+    def test_project_nested(self):
+        def p(x, y):
+            return (-x, -y)
+
+        crds = [[(1, 2), (3, 4), (5, 6)], [[(1, 2), (3, 4)], [(5, 6), (7, 8)]]]
+        pcrds = mapsheet.project_nested(crds, p)
+        self.assertEqual(pcrds, [[(-1, -2), (-3, -4), (-5, -6)],
+                                 [[(-1, -2), (-3, -4)],
+                                  [(-5, -6), (-7, -8)]]])
+
+    def test_apply_index(self):
+        crds = [[(1, 2), (3, 4), (5, 6)], [[(1, 2), (3, 4)], [(5, 6), (7, 8)]]]
+        self.assertEqual(mapsheet.apply_index_nested(crds, min, 0), 1)
+        self.assertEqual(mapsheet.apply_index_nested(crds, min, 1), 2)
+        self.assertEqual(mapsheet.apply_index_nested(crds, max, 0), 7)
+        self.assertEqual(mapsheet.apply_index_nested(crds, max, 1), 8)
+
+    def test_projected_bbox_point(self):
+        def p(x, y):
+            return (-x, -y)
+        g = Point((1, 2))
+        self.assertEqual(mapsheet.projected_bbox(g, p), (-1, -2, -1, -2))
+
+    def test_projected_bbox_polygon(self):
+        def p(x, y):
+            return (-x, -y)
+        g = Polygon([[(-2, -1), (0, -2), (1, 3), (-1, -2)]])
+        self.assertEqual(mapsheet.projected_bbox(g, p), (-1, -3, 2, 2))
+
+    def test_projected_bbox_feature(self):
+        def p(x, y):
+            return (-x, -y)
+        g = Feature(Polygon([[(-2, -1), (0, -2), (1, 3), (-1, -2)]]), {})
+        self.assertEqual(mapsheet.projected_bbox(g, p), (-1, -3, 2, 2))
+
+    def test_projected_bbox_geometry_collection(self):
+        def p(x, y):
+            return (-x, -y)
+        g = GeometryCollection([Polygon([[(-2, -1), (0, -2), (1, 3), (-1, -2)]]),
+                                LineString([(-3, -1), (0, -2), (1, 3), (-1, -2)]),
+                                Point((5, 2))])
+        self.assertEqual(mapsheet.projected_bbox(g, p), (-5, -3, 3, 2))
 
 if __name__ == "__main__":
     unittest.main()

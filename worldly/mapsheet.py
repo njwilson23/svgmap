@@ -21,11 +21,26 @@ class MapSheet(object):
     4. If none are provided, *bbox* is taken from the map entities and scale is
        computed.
 
-    Additional keyword arguments
-    - *style* sets a CSS stylesheet
+    style : str
+        CSS string
+
+    projection : callable
+        transforms coordinate pairs from geographical space to map space
+
+    bbox : tuple of 4 floats
+
+    scale : float
+        indicates the number of pixels per projected unit
+        e.g. 1/1000 in a projection defined in meters means that each pixels
+        represents 1 km.
+
+    center : tuple of 2 floats
+        the map center, in geographical coordinates. Ignored if *bbox* is not
+        None. If *center* and *bbox* are None, the centroid of the map entities
+        is used.
     """
     def __init__(self, dest, width=500, height=500, style=None,
-                 projection=WebMercator, bbox=None, center=None, scale=None):
+                 projection=WebMercator, bbox=None, scale=None, center=None):
         self.dest = dest
         self.width = width
         self.height = height
@@ -34,8 +49,8 @@ class MapSheet(object):
         self.style = style
         self.projection = projection
         self.bbox = bbox
-        self.center = center
         self.scale = scale
+        self.center = center
 
         self.entities = []
 
@@ -72,6 +87,8 @@ class MapSheet(object):
     def serialize(self):
         """ Return an encoded SVG string """
 
+        precision = 1
+
         if self.scale is None:      # compute scale from bbox
             bbox = (-180, -80, 180, 80) if self.bbox is None else self.bbox
             ll = self.projection(bbox[0], bbox[1])
@@ -80,12 +97,21 @@ class MapSheet(object):
             d = sqrt((bbox_p[2] - bbox_p[1])**2 + (bbox_p[3] - bbox_p[1])**2)
             L = sqrt(self.width**2 + self.height**2)
             scale = L/d
-            precision = 1
 
         else:                       # compute bbox from scale
             scale = self.scale
-            # must compute bbox_p and precision
-            raise NotImplementedError()
+
+            _bboxes = [projected_bbox(entity, self.projection)
+                       for entity, _ in self.entities
+                       if not isinstance(entity, SVGNode)]
+            _bbox_p = (min(bb[0] for bb in _bboxes),
+                       min(bb[1] for bb in _bboxes),
+                       max(bb[2] for bb in _bboxes),
+                       max(bb[3] for bb in _bboxes))
+            cen = (0.5*(_bbox_p[0] + _bbox_p[2]), 0.5*(_bbox_p[1] + _bbox_p[3]))
+            dx = 0.5 * self.height / scale
+            dy = 0.5 * self.width / scale
+            bbox_p = (cen[0] - dx, cen[1] + dy, cen[0] + dx, cen[1] - dy)
 
         transform = ("translate({dx1},{dy1}) "
                      "scale({sx},{sy}) "
@@ -280,4 +306,44 @@ def _set_attrs_from_properties(geoms, params, scales, properties):
     for geom in geoms:
         geom.attrs.update(computed_params)
     return
+
+def project_nested(coordinates, projection):
+    if not hasattr(coordinates[0], "__iter__"):
+        return projection(*coordinates[:2])
+    else:
+        return [project_nested(crds, projection) for crds in coordinates]
+
+def apply_index_nested(coordinates, func, idx):
+    """ Applies a function f([a...]) -> b to a list built from the *idx*-th
+    component of every item in an arbitrarily-nested list.
+    """
+    if not hasattr(coordinates[0][0], "__iter__"):
+        return func([xy[idx] for xy in coordinates])
+    else:
+        return func(apply_index_nested(crds, func, idx) for crds in coordinates)
+
+def projected_bbox(geojson, projection):
+    if type(geojson).__name__ == "Point":
+        pcrds = project_nested(geojson.coordinates, projection)
+        bbox = (pcrds[0], pcrds[1], pcrds[0], pcrds[1])
+    elif hasattr(geojson, "coordinates"):
+        pcrds = project_nested(geojson.coordinates, projection)
+        xmin = apply_index_nested(pcrds, min, 0)
+        ymin = apply_index_nested(pcrds, min, 1)
+        xmax = apply_index_nested(pcrds, max, 0)
+        ymax = apply_index_nested(pcrds, max, 1)
+        bbox = (xmin, ymin, xmax, ymax)
+    elif hasattr(geojson, "geometry"):
+        bbox = projected_bbox(geojson.geometry, projection)
+    elif hasattr(geojson, "geometries"):
+        bbs = [projected_bbox(g, projection) for g in geojson.geometries]
+        bbox = (min(bb[0] for bb in bbs), min(bb[1] for bb in bbs),
+                max(bb[2] for bb in bbs), max(bb[3] for bb in bbs))
+    elif hasattr(geojson, "features"):
+        bbs = [projected_bbox(feat.geometry, projection) for feat in geojson.features]
+        bbox = (min(bb[0] for bb in bbs), min(bb[1] for bb in bbs),
+                max(bb[2] for bb in bbs), max(bb[3] for bb in bbs))
+    else:
+        raise TypeError("unhandled geometry: '{}'".format(type(geojson)))
+    return bbox
 

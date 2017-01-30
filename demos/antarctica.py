@@ -14,6 +14,6 @@ with worldly.MapSheet("antarctica.svg", bbox=(-135, -50, 45, -50),
              opacity: 0.2; }
     """
 
-    mapsheet.add_geojson_file("tests/antarctica.geojson", class_name="ice")
-    mapsheet.add_geojson_file("tests/antarctica_ice_shelves.geojson", class_name="shelf")
+    mapsheet.add_geojson_file("demos/antarctica.geojson", class_name="ice")
+    mapsheet.add_geojson_file("demos/antarctica_ice_shelves.geojson", class_name="shelf")
 

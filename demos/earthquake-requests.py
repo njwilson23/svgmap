@@ -9,7 +9,7 @@ with worldly.MapSheet("earthquakes.svg", bbox=(-135, 51.5, -130, 54.5)) as mapsh
                   opacity: 0.9; }
     """
 
-    mapsheet.add_geojson_file("tests/haidagwai.geojson", class_name="land")
+    mapsheet.add_geojson_file("demos/haidagwai.geojson", class_name="land")
 
     r = requests.get("http://earthquake.usgs.gov/fdsnws/event/1/query?",
                      {"format":      "geojson",
