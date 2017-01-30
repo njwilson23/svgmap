@@ -113,6 +113,15 @@ class MapSheet(object):
             dy = 0.5 * self.width / scale
             bbox_p = (cen[0] - dx, cen[1] + dy, cen[0] + dx, cen[1] - dy)
 
+            bbx_aspect = abs(bbox_p[3]-bbox_p[1]) / (bbox_p[2]-bbox_p[0])
+            map_aspect = self.height / self.width
+            if map_aspect > bbx_aspect:
+                dy = 0.5 * (map_aspect * (bbox_p[2]-bbox_p[0]) - abs(bbox_p[3]-bbox_p[1]))
+                bbox_p = (bbox_p[0], bbox_p[1]+dy, bbox_p[2], bbox_p[3]-dy)
+            elif map_aspect < bbx_aspect:
+                dx = 0.5 * (abs(bbox_p[3]-bbox_p[1]) / map_aspect - (bbox_p[2]-bbox_p[0]))
+                bbox_p = (bbox_p[0]-dx, bbox_p[1], bbox_p[2]+dx, bbox_p[3])
+
         transform = ("translate({dx1},{dy1}) "
                      "scale({sx},{sy}) "
                      "translate({dx0},{dy0})".format(
